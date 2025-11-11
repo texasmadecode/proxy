@@ -1,5 +1,10 @@
 # 🚀 Master Proxy - Multi-Mode Web Bypass System
 
+[![CI Tests](https://github.com/texasmadecode/proxy/actions/workflows/test.yml/badge.svg)](https://github.com/texasmadecode/proxy/actions/workflows/test.yml)
+[![Deploy Docs](https://github.com/texasmadecode/proxy/actions/workflows/deploy.yml/badge.svg)](https://github.com/texasmadecode/proxy/actions/workflows/deploy.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive proxy server combining **6 successful bypass strategies** for evading device-level web filters.
 
 ## 🎯 Quick Start
