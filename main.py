@@ -139,6 +139,117 @@ def proxy(path):
                 # Replace URLs in href, src, srcset, content attributes
                 text = re.sub(r'(href|src|content)=["\']https?://[^"\']+["\']', rewrite_url, text)
                 
+                # Embed small images as base64 data URIs to bypass filter
+                def embed_image(match):
+                    full_match = match.group(0)
+                    url = match.group(2).strip('"').strip("'")
+                    
+                    # Skip if already proxied
+                    if '/proxy?url=' in url or proxy_origin in url:
+                        return full_match
+                    
+                    # Build full URL
+                    full_url = None
+                    if url.startswith('http'):
+                        full_url = url
+                    elif url.startswith('//'):
+                        full_url = 'https:' + url
+                    
+                    # Only embed images (not fonts or other resources)
+                    if full_url and any(ext in full_url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']):
+                        try:
+                            # Check cache
+                            if full_url in image_cache:
+                                return f'{match.group(1)}="{image_cache[full_url]}"'
+                            
+                            print(f"[PROXY] Fetching image for embedding: {full_url[:80]}...", flush=True)
+                            img_resp = requests.get(full_url, timeout=10)
+                            if img_resp.status_code == 200 and len(img_resp.content) < 500000:  # Only embed < 500KB
+                                # Determine MIME type
+                                mime_type = img_resp.headers.get('Content-Type', 'image/jpeg')
+                                if 'image/' not in mime_type:
+                                    if '.png' in full_url:
+                                        mime_type = 'image/png'
+                                    elif '.gif' in full_url:
+                                        mime_type = 'image/gif'
+                                    elif '.webp' in full_url:
+                                        mime_type = 'image/webp'
+                                    elif '.svg' in full_url:
+                                        mime_type = 'image/svg+xml'
+                                    else:
+                                        mime_type = 'image/jpeg'
+                                
+                                # Convert to base64
+                                img_b64 = base64.b64encode(img_resp.content).decode('utf-8')
+                                data_uri = f'data:{mime_type};base64,{img_b64}'
+                                image_cache[full_url] = data_uri
+                                print(f"[PROXY] Embedded image: {len(img_resp.content)} bytes", flush=True)
+                                return f'{match.group(1)}="{data_uri}"'
+                            else:
+                                print(f"[PROXY] Image too large or failed, using proxy: {len(img_resp.content) if img_resp.status_code == 200 else 'error'}", flush=True)
+                        except Exception as e:
+                            print(f"[PROXY] Failed to embed image {full_url[:50]}: {e}", flush=True)
+                    
+                    # Fallback: use proxy URL
+                    if full_url:
+                        return f'{match.group(1)}="{proxy_origin}/proxy?url={quote(full_url)}"'
+                    return full_match
+                
+                # Embed images in src attributes
+                text = re.sub(r'(src)=["\']([^"\']+)["\']', embed_image, text)
+                
+                # Handle srcset attributes (multiple images with sizes)
+                def rewrite_srcset(match):
+                    srcset_value = match.group(1)
+                    
+                    # Skip if already processed
+                    if '/proxy?url=' in srcset_value or 'data:image' in srcset_value:
+                        return match.group(0)
+                    
+                    # Split by comma (each entry is "url size")
+                    entries = srcset_value.split(',')
+                    new_entries = []
+                    
+                    for entry in entries:
+                        entry = entry.strip()
+                        parts = entry.split()
+                        if len(parts) >= 1:
+                            url = parts[0].strip()
+                            size = parts[1] if len(parts) > 1 else ''
+                            
+                            # Build full URL
+                            if url.startswith('http'):
+                                full_url = url
+                            elif url.startswith('//'):
+                                full_url = 'https:' + url
+                            else:
+                                full_url = None
+                            
+                            # Proxy the URL
+                            if full_url:
+                                proxied_url = f'{proxy_origin}/proxy?url={quote(full_url)}'
+                                new_entries.append(f'{proxied_url} {size}' if size else proxied_url)
+                            else:
+                                new_entries.append(entry)
+                        else:
+                            new_entries.append(entry)
+                    
+                    return f'srcset="{", ".join(new_entries)}"'
+                
+                text = re.sub(r'srcset=["\']([^"\']+)["\']', rewrite_srcset, text)
+                
+                # Inject Service Worker registration at the end of <head>
+                sw_script = '''<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+        console.log('[Proxy] Service Worker registered', reg);
+    }).catch(function(err) {
+        console.log('[Proxy] Service Worker registration failed', err);
+    });
+}
+</script>'''
+                text = text.replace('</head>', sw_script + '</head>', 1)
+                
                 # Also replace scheme-less URLs (//domain.com/path)
                 def rewrite_schemeless(match):
                     url = match.group(0).split('=', 1)[1].strip('"').strip("'")
@@ -313,6 +424,16 @@ def serve_content_js():
     app.logger.info("Serving local /content.js")
     static_dir = os.path.join(app.root_path, 'static')
     return send_from_directory(static_dir, 'content.js')
+
+# Serve the service worker
+@app.route('/sw.js')
+def serve_sw():
+    app.logger.info("Serving service worker /sw.js")
+    static_dir = os.path.join(app.root_path, 'static')
+    response = send_from_directory(static_dir, 'sw.js')
+    response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
 
 if __name__ == '__main__':
     # Run the Flask app on localhost, port 5000
