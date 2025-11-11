@@ -1,0 +1,118 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    🚀 MASTER PROXY QUICK START                        ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+📦 START SERVER
+───────────────────────────────────────────────────────────────────────
+  python3 master_proxy.py
+  
+  Server runs on: http://0.0.0.0:5000
+  Homepage: http://localhost:5000
+
+🎯 PROXY MODES (6 total)
+───────────────────────────────────────────────────────────────────────
+
+1. 🎬 FlixHQ STREAMING (Best for: free streaming sites)
+   URL: /flixhq/
+   What: Aggressive video/iframe interception, streaming relay
+   Use: Watch FlixHQ, similar free streaming sites
+   
+2. 📹 VIDEO PROXY (Best for: direct video links)
+   URL: /video-proxy?url=VIDEO_URL
+   What: Server-side video streaming (MP4, HLS, DASH)
+   Use: Bypass domain blocking for video files
+   
+3. 🖼️ IFRAME PROXY (Best for: embedded players)
+   URL: /iframe-proxy?url=IFRAME_URL
+   What: Recursive iframe proxying with interception
+   Use: Proxy embedded video players
+   
+4. ⚡ ULTRA MODE (Best for: static sites, images)
+   URL: /ultra/?url=TARGET_URL
+   What: Complete server-side assembly (inline everything)
+   Use: Sites with many images, avoid external requests
+   
+5. 🔒 VPN TUNNEL (Best for: hiding destinations)
+   URL: /tunnel (WebSocket)
+   What: Encrypted WebSocket tunnel (VPN-like)
+   Use: Route all requests through encrypted channel
+   
+6. 🥷 STEALTH MODE (Best for: experimental)
+   URL: /stealth/
+   What: Resources as JSON text/plain
+   Use: Evade content-type filters
+
+✅ WHAT WORKS
+───────────────────────────────────────────────────────────────────────
+  ✓ Free streaming sites (FlixHQ, etc.)
+  ✓ Domain blocking bypass
+  ✓ Video streaming (non-DRM)
+  ✓ Image/font blocking bypass
+  ✓ Content-type filtering bypass
+  ✓ SSL inspection bypass
+  
+❌ WHAT DOESN'T WORK
+───────────────────────────────────────────────────────────────────────
+  ✗ DRM content (Netflix, Disney+, HBO)
+  ✗ Kernel-level filters
+  ✗ Certificate-pinned apps
+  
+🧪 QUICK TESTS
+───────────────────────────────────────────────────────────────────────
+  # Homepage
+  curl http://localhost:5000/
+  
+  # Video streaming test
+  curl -I "http://localhost:5000/video-proxy?url=https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+  
+  # FlixHQ mode
+  curl http://localhost:5000/flixhq/ | head -50
+  
+  # Ultra mode
+  curl "http://localhost:5000/ultra/?url=https://example.com" | grep Ultra
+
+📊 LOGS
+───────────────────────────────────────────────────────────────────────
+  Format: [MODE    ] STATUS METHOD URL
+  
+  Example:
+    [FLIXHQ  ] ✓ 100676b GET  https://flixhq.to/
+    [VIDEO   ] ✓ video/mp4 GET  https://example.com/video.mp4
+    [IFRAME  ] → GET  https://player.example.com/embed/123
+
+⚙️ CONFIG
+───────────────────────────────────────────────────────────────────────
+  Edit master_proxy.py:
+  
+  FLIXHQ_URL = "https://flixhq.to/"  # Target site
+  DEFAULT_TIMEOUT = 15                # Request timeout
+  MAX_WORKERS = 10                    # Parallel fetching
+
+📚 FULL DOCS
+───────────────────────────────────────────────────────────────────────
+  See: MASTER_PROXY_README.md
+
+🎓 TECHNICAL SUMMARY
+───────────────────────────────────────────────────────────────────────
+  Combines 6 bypass strategies:
+  
+  1. Domain hiding → Server fetches, browser only sees proxy domain
+  2. Resource inlining → Everything embedded as data URIs
+  3. Content disguise → Resources as JSON text
+  4. Encrypted tunnel → WebSocket VPN-style routing
+  5. Streaming relay → Server streams video chunks
+  6. Recursive proxy → Nested iframe handling
+  
+  Filter sees: Requests to proxy domain (allowed)
+  Filter DOESN'T see: Blocked destinations (hidden by proxy)
+
+⚠️ LEGAL/ETHICAL
+───────────────────────────────────────────────────────────────────────
+  ⚠️ Educational use only
+  ⚠️ Respect ToS and copyright
+  ⚠️ Bypassing school/work filters may violate policies
+  ⚠️ Use responsibly and at your own risk
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║  Need help? Read MASTER_PROXY_README.md for detailed documentation   ║
+╚═══════════════════════════════════════════════════════════════════════╝
