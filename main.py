@@ -8,7 +8,7 @@ app = Flask(__name__)
 # --- Configuration ---
 # Set the target website you want to proxy. 
 # IMPORTANT: Include the scheme (http/https) and a trailing slash if necessary.
-TARGET_URL = "https://example.com/" 
+TARGET_URL = "netflix.com" 
 # ---------------------
 
 @app.route('/', defaults={'path': ''})
