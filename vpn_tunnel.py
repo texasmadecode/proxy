@@ -50,14 +50,15 @@ def tunnel(ws):
                     'status': resp.status_code,
                     'headers': dict(resp.headers),
                     'body': base64.b64encode(resp.content).decode('utf-8'),
-                    'url': resp.url
+                    'url': resp.url,
+                    'content_type': resp.headers.get('content-type', 'text/html')
                 }
+                
+                print(f"[TUNNEL] ✓ {resp.status_code} Content-Type: {resp.headers.get('content-type', 'MISSING')}")
                 
                 response_json = json.dumps(response_data)
                 encrypted_response = base64.b64encode(encrypt_data(response_json)).decode('utf-8')
                 ws.send(encrypted_response)
-                
-                print(f"[TUNNEL] ✓ {resp.status_code}")
                 
             except Exception as e:
                 print(f"[TUNNEL] Error: {e}")
